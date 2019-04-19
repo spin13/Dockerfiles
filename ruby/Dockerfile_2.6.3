@@ -1,11 +1,5 @@
 FROM amazonlinux:latest
 
-############################
-# The CircleCI build container for ruby
-
-# The CircleCI container requirements.
-# https://circleci.com/docs/2.0/custom-images/
-
 ENV LANG C.UTF-8
 
 # Ruby version
@@ -18,15 +12,9 @@ WORKDIR /root
 
 RUN yum update -y && \
     yum install -y \
-      # Install CicleCI requirements.
-      git \
-      ssh \
-      tar \
-      gzip \
-      ca-certificates \
-      # Install to build ruby requirements.
-      make e\
-      gcc && \
+      gcc \
+      make \
+      tar && \
     yum clean all
 
 RUN curl -o ruby-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}${VERSION_RELASE_TYPE}.tar.gz \
