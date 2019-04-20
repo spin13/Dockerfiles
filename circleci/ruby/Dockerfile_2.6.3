@@ -1,0 +1,8 @@
+FROM spinning13/ruby:2.6.3
+
+RUN yum install -y \
+  git \
+  ssh \
+  ca-certificates && \
+  yum clean all
+
