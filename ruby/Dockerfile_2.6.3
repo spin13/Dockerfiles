@@ -13,6 +13,7 @@ WORKDIR /root
 RUN yum update -y && \
     yum install -y \
       gcc \
+      gzip \
       make \
       tar && \
     yum clean all
