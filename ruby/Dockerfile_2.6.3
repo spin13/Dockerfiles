@@ -28,7 +28,7 @@ RUN cd ruby-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}${VERSION_RELASE_T
   make && \
   make install
 
-RUN rm ruby-*
+RUN rm -rf ruby-*
 
 RUN ruby -v
 
