@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Continuance build docker image using GitHub.
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: docker-build-base-image
+  Owner:
+    Type: String
+    Default: cloudformation
+
+Resources:
+  RubyECRREpository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: ruby
+      RepositoryPolicyText:
+        Version: "2008-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:BatchCheckLayerAvailability"
+              - "ecr:GetDownloadUrlForLayer"
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ApplicationName}-codebuild"
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - "codebuild.amazonaws.com"
+            Action:
+                - "sts:AssumeRole"
+
+  CodeBuildPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${ApplicationName}-codebuild-to-cloudwatch-logs"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*"
+
+          -
+            Effect: "Allow"
+            Action:
+                - "ecr:*"
+            Resource:
+                - "*"
+      Roles:
+          - !Ref CodeBuildRole
+
+  CodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref ApplicationName
+      ServiceRole: !Ref CodeBuildRole
+      # Specify your GitHub repository url by HTTPS.
+      Source:
+        Type: GITHUB
+        Location: https://github.com/spin13/Dockerfiles.git
+        BuildSpec: buildspec.yaml
+      # Requires GitHub OAuth token authentication.
+      # Triggers:
+      #   Webhook: true
+      #   FilterGroups:
+      #     -
+      #       # AND condition by each elements of array.
+      #       # Trigger "Push" Event on "master" branch
+      #       - Type: EVENT
+      #         Pattern: PUSH
+      #       - Type: HEAD_REF
+      #         Pattern: refs/heads/master
+      Environment:
+        Type: LINUX_CONTAINER
+        # BUILD_GENERAL1_SMALL or BUILD_GENERAL1_MEDIUM or BUILD_GENERAL1_LARGE
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: "aws/codebuild/docker:17.09.0"
+        EnvironmentVariables:
+          -
+            Name: AWS_REGION
+            Value: !Ref AWS::Region
+          # ECR BASE URI
+          -
+            Name: REPOSITORY_SUFFIX
+            Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com"
+      Artifacts:
+        Type: no_artifacts
+      Tags:
+        -
+          Key: Owner
+          Value: !Ref Owner
