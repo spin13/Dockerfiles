@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+  build:
+    commands:
+      - >
+        docker build
+        -f ruby/Dockerfile_2.6.3
+        -t "${REPOSITORY_SUFFIX}/ruby:2.6.3" .
+  post_build:
+    commands:
+      - docker push "${REPOSITORY_SUFFIX}/ruby:2.6.3"
